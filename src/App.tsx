@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
+import ChangePassword from "./pages/ChangePassword";
 import PublicRaffles from "./pages/PublicRaffles";
 import RafflePurchase from "./pages/RafflePurchase";
 import RaffleTickets from "./pages/RaffleTickets";
@@ -24,6 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<PublicRaffles />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/raffle/:id" element={<RafflePurchase />} />
             <Route path="/raffle/:id/tickets" element={<RaffleTickets />} />

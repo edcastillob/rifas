@@ -17,14 +17,18 @@ const Admin = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingRaffle, setEditingRaffle] = useState<Raffle | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user, isAdmin, signOut, loading: authLoading } = useAuth();
+  const { user, isAdmin, mustChangePassword, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate("/auth");
+    if (!authLoading) {
+      if (!isAdmin) {
+        navigate("/auth");
+      } else if (mustChangePassword) {
+        navigate("/change-password");
+      }
     }
-  }, [authLoading, isAdmin, navigate]);
+  }, [authLoading, isAdmin, mustChangePassword, navigate]);
 
   useEffect(() => {
     if (isAdmin) {

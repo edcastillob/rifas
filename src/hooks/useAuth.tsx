@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   role: UserRole;
   loading: boolean;
+  mustChangePassword: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -22,20 +23,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async (userId: string) => {
     const { data, error } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role, must_change_password")
       .eq("user_id", userId)
       .maybeSingle();
 
     if (error) {
       console.error("Error fetching user role:", error);
-      return null;
+      return { role: null, mustChangePassword: false };
     }
-    return data?.role as UserRole || null;
+    return {
+      role: (data?.role as UserRole) || null,
+      mustChangePassword: data?.must_change_password ?? false,
+    };
   };
 
   useEffect(() => {
@@ -46,11 +51,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (currentSession?.user) {
           setTimeout(async () => {
-            const userRole = await fetchUserRole(currentSession.user.id);
-            setRole(userRole);
+            const roleData = await fetchUserRole(currentSession.user.id);
+            setRole(roleData.role);
+            setMustChangePassword(roleData.mustChangePassword);
           }, 0);
         } else {
           setRole(null);
+          setMustChangePassword(false);
         }
         
         setLoading(false);
@@ -62,8 +69,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        const userRole = await fetchUserRole(currentSession.user.id);
-        setRole(userRole);
+        const roleData = await fetchUserRole(currentSession.user.id);
+        setRole(roleData.role);
+        setMustChangePassword(roleData.mustChangePassword);
       }
       
       setLoading(false);
@@ -107,6 +115,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         session,
         role,
         loading,
+        mustChangePassword,
         signIn,
         signUp,
         signOut,

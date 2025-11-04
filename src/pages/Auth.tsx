@@ -14,19 +14,22 @@ const authSchema = z.object({
 });
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user, isAdmin } = useAuth();
+  const { signIn, isAdmin, mustChangePassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user && isAdmin) {
-      navigate("/admin");
+    if (isAdmin) {
+      if (mustChangePassword) {
+        navigate("/change-password");
+      } else {
+        navigate("/admin");
+      }
     }
-  }, [user, isAdmin, navigate]);
+  }, [isAdmin, mustChangePassword, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,9 +46,7 @@ const Auth = () => {
 
     setLoading(true);
 
-    const { error } = isLogin
-      ? await signIn(email, password)
-      : await signUp(email, password);
+    const { error } = await signIn(email, password);
 
     setLoading(false);
 
@@ -54,17 +55,13 @@ const Auth = () => {
         title: "Error",
         description: error.message === "Invalid login credentials"
           ? "Credenciales inválidas"
-          : error.message === "User already registered"
-          ? "El usuario ya está registrado"
           : error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: isLogin ? "Inicio de sesión exitoso" : "Registro exitoso",
-        description: isLogin 
-          ? "Bienvenido de nuevo" 
-          : "Tu cuenta ha sido creada. Redirigiendo...",
+        title: "Inicio de sesión exitoso",
+        description: "Bienvenido",
       });
     }
   };
@@ -74,12 +71,10 @@ const Auth = () => {
       <Card className="w-full max-w-md border-primary/20 shadow-card">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            {isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
+            Iniciar Sesión
           </CardTitle>
           <CardDescription>
-            {isLogin
-              ? "Ingresa tus credenciales para acceder al panel de administración"
-              : "Crea una cuenta nueva para gestionar rifas"}
+            Ingresa tus credenciales para acceder al panel de administración
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -107,20 +102,9 @@ const Auth = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Procesando..." : isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
+              {loading ? "Procesando..." : "Iniciar Sesión"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary hover:underline"
-            >
-              {isLogin
-                ? "¿No tienes cuenta? Regístrate"
-                : "¿Ya tienes cuenta? Inicia sesión"}
-            </button>
-          </div>
         </CardContent>
       </Card>
     </div>
