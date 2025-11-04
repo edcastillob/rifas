@@ -96,7 +96,11 @@ export const AdminManagement = () => {
     if (authData.user) {
       const { error: roleError } = await supabase
         .from("user_roles")
-        .insert({ user_id: authData.user.id, role: "admin" });
+        .insert({ 
+          user_id: authData.user.id, 
+          role: "admin",
+          must_change_password: true 
+        });
 
       if (roleError) {
         toast({
@@ -107,7 +111,7 @@ export const AdminManagement = () => {
       } else {
         toast({
           title: "Éxito",
-          description: "Administrador creado correctamente",
+          description: "Administrador creado correctamente. El usuario deberá cambiar su contraseña en el primer inicio de sesión.",
         });
         setNewEmail("");
         setNewPassword("");

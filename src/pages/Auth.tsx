@@ -48,9 +48,8 @@ const Auth = () => {
 
     const { error } = await signIn(email, password);
 
-    setLoading(false);
-
     if (error) {
+      setLoading(false);
       toast({
         title: "Error",
         description: error.message === "Invalid login credentials"
@@ -61,8 +60,9 @@ const Auth = () => {
     } else {
       toast({
         title: "Inicio de sesión exitoso",
-        description: "Bienvenido",
+        description: "Redirigiendo...",
       });
+      // El useEffect manejará la redirección cuando isAdmin se actualice
     }
   };
 

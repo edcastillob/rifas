@@ -17,7 +17,7 @@ const Admin = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingRaffle, setEditingRaffle] = useState<Raffle | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user, isAdmin, mustChangePassword, signOut, loading: authLoading } = useAuth();
+  const { user, isAdmin, isSuperAdmin, mustChangePassword, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -70,30 +70,46 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-primary/5">
-      <div className="container mx-auto px-4 py-8">
-        <header className="mb-8">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b border-primary/10">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-                Panel de Administración
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-1">
+                {isSuperAdmin ? "Panel de Super Administrador" : "Panel de Administrador"}
               </h1>
-              <p className="text-muted-foreground">Gestiona tus rifas y revisa el estado de los tickets</p>
-              <p className="text-sm text-muted-foreground mt-1">Usuario: {user?.email}</p>
+              <p className="text-muted-foreground">
+                {isSuperAdmin 
+                  ? "Gestiona rifas y administradores del sistema" 
+                  : "Gestiona tus rifas y revisa el estado de los tickets"}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Usuario: {user?.email}
+              </p>
             </div>
-            <Button variant="outline" onClick={async () => {
-              await signOut();
-              navigate("/auth");
-            }} className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                await signOut();
+                navigate("/auth");
+              }} 
+              className="gap-2"
+            >
               <LogOut className="h-4 w-4" />
               Cerrar Sesión
             </Button>
           </div>
-        </header>
+        </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
         {!showForm ? (
           <div className="space-y-6">
-            <AdminManagement />
+            {/* Solo el super admin ve la gestión de administradores */}
+            {isSuperAdmin && <AdminManagement />}
             
+            {/* Ambos roles ven la gestión de rifas */}
             <Card className="border-primary/20 shadow-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
