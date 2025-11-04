@@ -47,10 +47,12 @@ export const AdminManagement = () => {
 
     const adminsWithEmails = await Promise.all(
       (roles || []).map(async (role) => {
-        const { data: { user } } = await supabase.auth.admin.getUserById(role.user_id);
+        const { data: email, error: emailError } = await supabase
+          .rpc("get_user_email", { _user_id: role.user_id });
+        
         return {
           ...role,
-          email: user?.email || "Unknown",
+          email: email || "Unknown",
         };
       })
     );
