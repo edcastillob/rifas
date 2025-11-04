@@ -76,7 +76,10 @@ const Admin = () => {
               <p className="text-muted-foreground">Gestiona tus rifas y revisa el estado de los tickets</p>
               <p className="text-sm text-muted-foreground mt-1">Usuario: {user?.email}</p>
             </div>
-            <Button variant="outline" onClick={signOut} className="gap-2">
+            <Button variant="outline" onClick={async () => {
+              await signOut();
+              navigate("/auth");
+            }} className="gap-2">
               <LogOut className="h-4 w-4" />
               Cerrar Sesión
             </Button>
