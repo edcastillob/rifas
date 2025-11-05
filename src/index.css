@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Modern Tech Blue Design System - Todos los colores en HSL */
+
+@layer base {
+  :root {
+    /* Colores base */
+    --background: 220 33% 98%;
+    --foreground: 222 47% 11%;
+
+    /* Sistema de capas */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Colores primarios - Azul tecnológico */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 199 89% 48%;
+
+    /* Colores secundarios - Azul profundo */
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Estados y utilidades */
+    --muted: 220 33% 97%;
+    --muted-foreground: 220 8% 46%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Elementos de UI */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 60%;
+    --radius: 0.75rem;
+    
+    /* Gradientes modernos */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-hero: linear-gradient(135deg, 
+      hsl(217, 91%, 60%) 0%, 
+      hsl(199, 89%, 48%) 50%, 
+      hsl(222, 47%, 11%) 100%);
+    --gradient-tech: linear-gradient(135deg, 
+      hsl(217, 91%, 60%) 0%, 
+      hsl(199, 89%, 48%) 50%, 
+      hsl(192, 85%, 40%) 100%);
+    
+    /* Efectos visuales */
+    --shadow-glow: 0 10px 40px -10px hsl(217 91% 60% / 0.3);
+    --shadow-card: 0 4px 20px -4px hsl(222 47% 11% / 0.08);
+    --shadow-tech: 0 8px 30px hsl(217 91% 60% / 0.15);
+    
+    /* Transiciones suaves */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-tech: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+    /* Sidebar - Azul oscuro tecnológico */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  .dark {
+    /* Modo oscuro - Tema azul tecnológico */
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Colores primarios - Brillantes en oscuro */
+    --primary: 217 91% 65%;
+    --primary-foreground: 222 47% 11%;
+    --primary-glow: 199 89% 55%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Estados en modo oscuro */
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 91% 65%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 72% 29%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 40%;
+    --warning-foreground: 210 40% 98%;
+
+    /* Elementos UI modo oscuro */
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 65%;
+
+    /* Efectos mejorados para oscuro */
+    --shadow-glow: 0 10px 40px -10px hsl(217 91% 65% / 0.4);
+    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
+    --shadow-tech: 0 8px 30px hsl(217 91% 65% / 0.25);
+
+    /* Sidebar modo oscuro */
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 65%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 33% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 14%;
+    --sidebar-ring: 217 91% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Mejoras visuales adicionales */
+  .tech-glow {
+    box-shadow: var(--shadow-tech);
+  }
+  
+  .gradient-tech {
+    background: var(--gradient-tech);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+}
+
+@layer components {
+  .btn-tech {
+    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground font-medium px-6 py-3 rounded-lg transition-all duration-300 hover:shadow-glow hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
+  
+  .card-tech {
+    @apply bg-card rounded-xl border border-border shadow-card transition-smooth hover:shadow-tech hover:translate-y-[-2px];
+  }
+}
