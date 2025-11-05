@@ -46,21 +46,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
         if (currentSession?.user) {
           setTimeout(async () => {
             const roleData = await fetchUserRole(currentSession.user.id);
+            console.log("Role fetched:", roleData);
             setRole(roleData.role);
             setMustChangePassword(roleData.mustChangePassword);
+            setLoading(false);
           }, 0);
         } else {
           setRole(null);
           setMustChangePassword(false);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -70,6 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (currentSession?.user) {
         const roleData = await fetchUserRole(currentSession.user.id);
+        console.log("Initial role:", roleData);
         setRole(roleData.role);
         setMustChangePassword(roleData.mustChangePassword);
       }

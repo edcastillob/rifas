@@ -23,9 +23,9 @@ const Admin = () => {
   useEffect(() => {
     if (!authLoading) {
       if (!isAdmin) {
-        navigate("/auth");
+        navigate("/auth", { replace: true });
       } else if (mustChangePassword) {
-        navigate("/change-password");
+        navigate("/change-password", { replace: true });
       }
     }
   }, [authLoading, isAdmin, mustChangePassword, navigate]);

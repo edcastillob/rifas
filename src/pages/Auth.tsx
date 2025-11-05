@@ -17,19 +17,19 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, isAdmin, mustChangePassword } = useAuth();
+  const { signIn, isAdmin, mustChangePassword, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isAdmin) {
+    if (!authLoading && isAdmin) {
       if (mustChangePassword) {
-        navigate("/change-password");
+        navigate("/change-password", { replace: true });
       } else {
-        navigate("/admin");
+        navigate("/admin", { replace: true });
       }
     }
-  }, [isAdmin, mustChangePassword, navigate]);
+  }, [isAdmin, mustChangePassword, navigate, authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,16 +53,16 @@ const Auth = () => {
       toast({
         title: "Error",
         description: error.message === "Invalid login credentials"
-          ? "Credenciales inválidas"
+          ? "Credenciales inválidas. Por favor verifica tu email y contraseña."
           : error.message,
         variant: "destructive",
       });
     } else {
+      // No quitar loading aquí, dejar que el useEffect maneje la redirección
       toast({
         title: "Inicio de sesión exitoso",
         description: "Redirigiendo...",
       });
-      // El useEffect manejará la redirección cuando isAdmin se actualice
     }
   };
 
