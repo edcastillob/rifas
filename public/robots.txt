@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+# Sitemap location
+Sitemap: https://armando-rifa.netlify.app
