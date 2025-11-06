@@ -14,50 +14,48 @@ const emailSchema = z.object({
   password: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres" }),
 });
 
-interface Admin {
-  id: string;
+interface User {
   user_id: string;
-  role: string;
   email: string;
+  role: string | null;
+  created_at: string;
+  must_change_password: boolean;
+}
+
+interface EditingUser {
+  user_id: string;
+  role: "admin" | "super_admin";
 }
 
 export const AdminManagement = () => {
-  const [admins, setAdmins] = useState<Admin[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
   const { toast } = useToast();
   const { isSuperAdmin } = useAuth();
 
   useEffect(() => {
     if (isSuperAdmin) {
-      fetchAdmins();
+      fetchUsers();
     }
   }, [isSuperAdmin]);
 
-  const fetchAdmins = async () => {
-    const { data: roles, error } = await supabase
-      .from("user_roles")
-      .select("*");
+  const fetchUsers = async () => {
+    const { data, error } = await supabase.rpc("get_all_users_with_roles");
 
     if (error) {
-      console.error("Error fetching admins:", error);
+      console.error("Error fetching users:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los usuarios",
+        variant: "destructive",
+      });
       return;
     }
 
-    const adminsWithEmails = await Promise.all(
-      (roles || []).map(async (role) => {
-        const { data: email, error: emailError } = await supabase
-          .rpc("get_user_email", { _user_id: role.user_id });
-        
-        return {
-          ...role,
-          email: email || "Unknown",
-        };
-      })
-    );
-
-    setAdmins(adminsWithEmails);
+    setUsers(data || []);
   };
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
@@ -115,14 +113,14 @@ export const AdminManagement = () => {
         });
         setNewEmail("");
         setNewPassword("");
-        fetchAdmins();
+        fetchUsers();
       }
     }
 
     setLoading(false);
   };
 
-  const handleDeleteAdmin = async (userId: string, email: string) => {
+  const handleDeleteRole = async (userId: string, email: string) => {
     if (email === "edwar.castillo@gmail.com") {
       toast({
         title: "Error",
@@ -140,16 +138,64 @@ export const AdminManagement = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "No se pudo eliminar el administrador",
+        description: "No se pudo eliminar el rol",
         variant: "destructive",
       });
     } else {
       toast({
         title: "Éxito",
-        description: "Administrador eliminado correctamente",
+        description: "Rol eliminado correctamente",
       });
-      fetchAdmins();
+      fetchUsers();
     }
+  };
+
+  const handleEditRole = async () => {
+    if (!editingUser) return;
+
+    // Si el usuario ya tiene un rol, actualizamos
+    const userHasRole = users.find(u => u.user_id === editingUser.user_id)?.role;
+
+    if (userHasRole) {
+      const { error } = await supabase
+        .from("user_roles")
+        .update({ role: editingUser.role as "admin" | "super_admin" })
+        .eq("user_id", editingUser.user_id);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo actualizar el rol",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // Si no tiene rol, insertamos uno nuevo
+      const { error } = await supabase
+        .from("user_roles")
+        .insert([{ 
+          user_id: editingUser.user_id, 
+          role: editingUser.role as "admin" | "super_admin",
+          must_change_password: true 
+        }]);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo asignar el rol",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    toast({
+      title: "Éxito",
+      description: "Rol actualizado correctamente",
+    });
+    setEditingUser(null);
+    fetchUsers();
   };
 
   if (!isSuperAdmin) {
@@ -194,28 +240,73 @@ export const AdminManagement = () => {
         </form>
 
         <div className="space-y-2">
-          <h3 className="font-semibold">Administradores Actuales</h3>
+          <h3 className="font-semibold">Usuarios Registrados</h3>
           <div className="space-y-2">
-            {admins.map((admin) => (
+            {users.map((user) => (
               <div
-                key={admin.id}
+                key={user.user_id}
                 className="flex items-center justify-between p-3 border rounded-lg border-border"
               >
-                <div>
-                  <p className="font-medium">{admin.email}</p>
-                  <p className="text-sm text-muted-foreground capitalize">
-                    {admin.role.replace("_", " ")}
+                <div className="flex-1">
+                  <p className="font-medium">{user.email}</p>
+                  {editingUser?.user_id === user.user_id ? (
+                    <select
+                      value={editingUser.role}
+                      onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as "admin" | "super_admin" })}
+                      className="mt-1 text-sm border rounded px-2 py-1 bg-background"
+                    >
+                      <option value="admin">Admin</option>
+                      <option value="super_admin">Super Admin</option>
+                    </select>
+                  ) : (
+                    <p className="text-sm text-muted-foreground capitalize">
+                      {user.role ? user.role.replace("_", " ") : "Sin rol asignado"}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Registrado: {new Date(user.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                {admin.email !== "edwar.castillo@gmail.com" && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteAdmin(admin.user_id, admin.email)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {editingUser?.user_id === user.user_id ? (
+                    <>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={handleEditRole}
+                      >
+                        Guardar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingUser(null)}
+                      >
+                        Cancelar
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingUser({ user_id: user.user_id, role: (user.role || "admin") as "admin" | "super_admin" })}
+                        disabled={user.email === "edwar.castillo@gmail.com"}
+                      >
+                        Editar Rol
+                      </Button>
+                      {user.role && user.email !== "edwar.castillo@gmail.com" && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteRole(user.user_id, user.email)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>
