@@ -5,9 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, UserPlus } from "lucide-react";
+import { Trash2, UserPlus, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const emailSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -29,10 +39,15 @@ interface EditingUser {
 
 export const AdminManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [userToDelete, setUserToDelete] = useState<{ userId: string; email: string } | null>(null);
+  const usersPerPage = 10;
   const { toast } = useToast();
   const { isSuperAdmin } = useAuth();
 
@@ -41,6 +56,14 @@ export const AdminManagement = () => {
       fetchUsers();
     }
   }, [isSuperAdmin]);
+
+  useEffect(() => {
+    const filtered = users.filter(user =>
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredUsers(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, users]);
 
   const fetchUsers = async () => {
     const { data, error } = await supabase.rpc("get_all_users_with_roles");
@@ -120,25 +143,19 @@ export const AdminManagement = () => {
     setLoading(false);
   };
 
-  const handleDeleteRole = async (userId: string, email: string) => {
-    if (email === "edwar.castillo@gmail.com") {
-      toast({
-        title: "Error",
-        description: "No se puede eliminar al super administrador",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleDeleteRole = async () => {
+    if (!userToDelete) return;
 
     const { error } = await supabase
       .from("user_roles")
       .delete()
-      .eq("user_id", userId);
+      .eq("user_id", userToDelete.userId);
 
     if (error) {
+      console.error("Error deleting role:", error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el rol",
+        description: `No se pudo eliminar el rol: ${error.message}`,
         variant: "destructive",
       });
     } else {
@@ -148,6 +165,19 @@ export const AdminManagement = () => {
       });
       fetchUsers();
     }
+    setUserToDelete(null);
+  };
+
+  const confirmDelete = (userId: string, email: string) => {
+    if (email === "edwar.castillo@gmail.com") {
+      toast({
+        title: "Error",
+        description: "No se puede eliminar al super administrador",
+        variant: "destructive",
+      });
+      return;
+    }
+    setUserToDelete({ userId, email });
   };
 
   const handleEditRole = async () => {
@@ -202,47 +232,65 @@ export const AdminManagement = () => {
     return null;
   }
 
-  return (
-    <Card className="border-primary/20 shadow-card">
-      <CardHeader>
-        <CardTitle>Gestión de Administradores</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <form onSubmit={handleCreateAdmin} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="admin-email">Email del nuevo administrador</Label>
-              <Input
-                id="admin-email"
-                type="email"
-                placeholder="admin@ejemplo.com"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="admin-password">Contraseña</Label>
-              <Input
-                id="admin-password"
-                type="password"
-                placeholder="••••••••"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-          <Button type="submit" disabled={loading} className="gap-2">
-            <UserPlus className="h-4 w-4" />
-            Crear Administrador
-          </Button>
-        </form>
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
-        <div className="space-y-2">
-          <h3 className="font-semibold">Usuarios Registrados</h3>
-          <div className="space-y-2">
-            {users.map((user) => (
+  return (
+    <>
+      <Card className="border-primary/20 shadow-card">
+        <CardHeader>
+          <CardTitle>Gestión de Administradores</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <form onSubmit={handleCreateAdmin} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-email">Email del nuevo administrador</Label>
+                <Input
+                  id="admin-email"
+                  type="email"
+                  placeholder="admin@ejemplo.com"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-password">Contraseña</Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <Button type="submit" disabled={loading} className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Crear Administrador
+            </Button>
+          </form>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Usuarios Registrados</h3>
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              {currentUsers.map((user) => (
               <div
                 key={user.user_id}
                 className="flex items-center justify-between p-3 border rounded-lg border-border"
@@ -299,7 +347,7 @@ export const AdminManagement = () => {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleDeleteRole(user.user_id, user.email)}
+                          onClick={() => confirmDelete(user.user_id, user.email)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -310,8 +358,51 @@ export const AdminManagement = () => {
               </div>
             ))}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
+
+    <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción eliminará el rol de administrador para el usuario{" "}
+            <span className="font-semibold">{userToDelete?.email}</span>. Esta acción no se puede deshacer.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeleteRole} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
