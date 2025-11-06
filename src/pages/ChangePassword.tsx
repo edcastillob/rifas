@@ -52,7 +52,13 @@ const ChangePassword = () => {
         password: password,
       });
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        // Manejo específico para error de contraseña repetida
+        if (updateError.message.includes("same")) {
+          throw new Error("La nueva contraseña debe ser diferente a la anterior");
+        }
+        throw updateError;
+      }
 
       // Mark password as changed in user_roles
       const { data: { user } } = await supabase.auth.getUser();
@@ -67,18 +73,23 @@ const ChangePassword = () => {
       }
 
       toast({
-        title: "Contraseña actualizada",
-        description: "Tu contraseña ha sido cambiada exitosamente",
+        title: "Contraseña actualizada exitosamente",
+        description: "Por favor, inicia sesión con tu nueva contraseña",
       });
 
-      navigate("/admin");
+      // Cerrar sesión para que el estado se actualice correctamente
+      await supabase.auth.signOut();
+      
+      // Redirigir al login después de un breve delay
+      setTimeout(() => {
+        navigate("/auth");
+      }, 1500);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Error al cambiar contraseña",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
