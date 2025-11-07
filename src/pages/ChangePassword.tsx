@@ -74,15 +74,12 @@ const ChangePassword = () => {
 
       toast({
         title: "Contraseña actualizada exitosamente",
-        description: "Por favor, inicia sesión con tu nueva contraseña",
+        description: "Redirigiendo al panel de administración...",
       });
-
-      // Cerrar sesión para que el estado se actualice correctamente
-      await supabase.auth.signOut();
       
-      // Redirigir al login después de un breve delay
+      // Redirigir al panel después de un breve delay
       setTimeout(() => {
-        navigate("/auth");
+        navigate("/admin");
       }, 1500);
     } catch (error: any) {
       toast({
