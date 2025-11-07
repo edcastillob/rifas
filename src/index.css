@@ -2,7 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Modern Tech Blue Design System - Todos los colores en HSL */
+/* ========================================
+   SISTEMA DE DISEÑO - ÚNICO ARCHIVO CSS
+   ========================================
+   
+   Este archivo contiene:
+   - Variables CSS del sistema de diseño
+   - Estilos base y normalizaciones
+   - Componentes personalizados
+   - Utilidades responsive
+   - Animaciones y transiciones
+   
+   Todos los colores DEBEN ser HSL.
+   ======================================== */
+
+/* ========================================
+   VARIABLES DEL SISTEMA DE DISEÑO
+   ======================================== */
 
 @layer base {
   :root {
@@ -10,9 +26,11 @@
     --background: 220 33% 98%;
     --foreground: 222 47% 11%;
 
-    /* Sistema de capas */
+    /* Tarjetas y superficies */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
+
+    /* Popovers y dropdowns */
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
@@ -25,43 +43,49 @@
     --secondary: 222 47% 11%;
     --secondary-foreground: 0 0% 100%;
 
-    /* Estados y utilidades */
+    /* Colores apagados */
     --muted: 220 33% 97%;
     --muted-foreground: 220 8% 46%;
+
+    /* Colores de acento */
     --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
+
+    /* Colores destructivos */
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
+
+    /* Estados */
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
+    
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* Elementos de UI */
+    /* Bordes y inputs */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
     --ring: 217 91% 60%;
+
+    /* Bordes redondeados */
     --radius: 0.75rem;
-    
-    /* Gradientes modernos */
+
+    /* Gradientes */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
     --gradient-hero: linear-gradient(135deg, 
       hsl(217, 91%, 60%) 0%, 
       hsl(199, 89%, 48%) 50%, 
       hsl(222, 47%, 11%) 100%);
-    --gradient-tech: linear-gradient(135deg, 
-      hsl(217, 91%, 60%) 0%, 
-      hsl(199, 89%, 48%) 50%, 
-      hsl(192, 85%, 40%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
     
-    /* Efectos visuales */
+    /* Sombras */
     --shadow-glow: 0 10px 40px -10px hsl(217 91% 60% / 0.3);
     --shadow-card: 0 4px 20px -4px hsl(222 47% 11% / 0.08);
-    --shadow-tech: 0 8px 30px hsl(217 91% 60% / 0.15);
+    --shadow-hover: 0 8px 30px hsl(217 91% 60% / 0.15);
     
-    /* Transiciones suaves */
+    /* Transiciones */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-tech: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Sidebar - Azul oscuro tecnológico */
     --sidebar-background: 222 47% 11%;
@@ -74,8 +98,8 @@
     --sidebar-ring: 217 91% 60%;
   }
 
+  /* Modo oscuro - Tema azul tecnológico */
   .dark {
-    /* Modo oscuro - Tema azul tecnológico */
     --background: 222 47% 8%;
     --foreground: 210 40% 98%;
 
@@ -93,28 +117,30 @@
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
 
-    /* Estados en modo oscuro */
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
+
     --accent: 217 91% 65%;
     --accent-foreground: 222 47% 11%;
+
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
+
     --success: 142 72% 29%;
     --success-foreground: 210 40% 98%;
+    
     --warning: 38 92% 40%;
     --warning-foreground: 210 40% 98%;
 
-    /* Elementos UI modo oscuro */
     --border: 217 33% 17%;
     --input: 217 33% 17%;
     --ring: 217 91% 65%;
-
+    
     /* Efectos mejorados para oscuro */
     --shadow-glow: 0 10px 40px -10px hsl(217 91% 65% / 0.4);
     --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
-    --shadow-tech: 0 8px 30px hsl(217 91% 65% / 0.25);
-
+    --shadow-hover: 0 8px 30px hsl(217 91% 65% / 0.25);
+    
     /* Sidebar modo oscuro */
     --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 40% 98%;
@@ -127,36 +153,227 @@
   }
 }
 
+/* ========================================
+   ESTILOS BASE
+   ======================================== */
+
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Mejoras visuales adicionales */
-  .tech-glow {
-    box-shadow: var(--shadow-tech);
+  /* Mejoras de tipografía */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
   }
-  
-  .gradient-tech {
-    background: var(--gradient-tech);
+
+  h1 {
+    @apply text-4xl sm:text-5xl md:text-6xl;
   }
-  
-  .gradient-hero {
-    background: var(--gradient-hero);
+
+  h2 {
+    @apply text-3xl sm:text-4xl md:text-5xl;
+  }
+
+  h3 {
+    @apply text-2xl sm:text-3xl md:text-4xl;
+  }
+
+  h4 {
+    @apply text-xl sm:text-2xl md:text-3xl;
+  }
+
+  p {
+    @apply leading-7;
+  }
+
+  /* Scroll suave */
+  html {
+    @apply scroll-smooth;
+  }
+
+  /* Focus visible para accesibilidad */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
   }
 }
 
+/* ========================================
+   COMPONENTES PERSONALIZADOS
+   ======================================== */
+
 @layer components {
-  .btn-tech {
-    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground font-medium px-6 py-3 rounded-lg transition-all duration-300 hover:shadow-glow hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  /* Contenedor responsive */
+  .container-custom {
+    @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
+    max-width: 1400px;
   }
-  
-  .card-tech {
-    @apply bg-card rounded-xl border border-border shadow-card transition-smooth hover:shadow-tech hover:translate-y-[-2px];
+
+  /* Tarjeta con efecto hover */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-hover hover:-translate-y-1;
+  }
+
+  /* Botón con gradiente */
+  .btn-gradient {
+    @apply bg-gradient-primary text-primary-foreground font-semibold rounded-lg px-6 py-3 transition-all duration-300 hover:shadow-glow hover:scale-105 active:scale-95;
+  }
+
+  /* Link con animación de subrayado */
+  .link-animated {
+    @apply relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left;
+  }
+
+  /* Badge con estilos consistentes */
+  .badge-success {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-success/10 text-success border border-success/20;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-warning/10 text-warning border border-warning/20;
+  }
+
+  .badge-error {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20;
   }
 }
+
+/* ========================================
+   UTILIDADES RESPONSIVE
+   ======================================== */
+
+@layer utilities {
+  /* Espaciado responsive */
+  .section-padding {
+    @apply py-12 sm:py-16 md:py-20 lg:py-24;
+  }
+
+  /* Textos responsive */
+  .text-responsive-lg {
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  .text-responsive-md {
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
+  }
+
+  .text-responsive-sm {
+    @apply text-base sm:text-lg md:text-xl lg:text-2xl;
+  }
+
+  /* Grid responsive */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8;
+  }
+
+  /* Flex responsive */
+  .flex-responsive {
+    @apply flex flex-col sm:flex-row gap-4 sm:gap-6 lg:gap-8;
+  }
+
+  /* Ocultar/mostrar según breakpoint */
+  .hide-mobile {
+    @apply hidden sm:block;
+  }
+
+  .show-mobile {
+    @apply block sm:hidden;
+  }
+
+  /* Animaciones */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-2 hover:shadow-hover;
+  }
+
+  .hover-glow {
+    @apply transition-shadow duration-300 hover:shadow-glow;
+  }
+}
+
+/* ========================================
+   ANIMACIONES
+   ======================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   MEJORAS DE ACCESIBILIDAD
+   ======================================== */
+
+/* Mejora el contraste en modo de alto contraste */
+@media (prefers-contrast: high) {
+  :root {
+    --border: 214.3 31.8% 70%;
+  }
+}
+
+/* Respeta preferencias de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+/* 
+  Breakpoints de Tailwind:
+  - sm: 640px
+  - md: 768px
+  - lg: 1024px
+  - xl: 1280px
+  - 2xl: 1536px
+*/

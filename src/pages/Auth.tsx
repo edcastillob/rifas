@@ -18,19 +18,15 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, isAdmin, mustChangePassword, loading: authLoading } = useAuth();
+  const { signIn, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && isAdmin) {
-      if (mustChangePassword) {
-        navigate("/change-password", { replace: true });
-      } else {
-        navigate("/admin", { replace: true });
-      }
+      navigate("/admin", { replace: true });
     }
-  }, [isAdmin, mustChangePassword, navigate, authLoading]);
+  }, [isAdmin, navigate, authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
