@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, UserPlus, Search } from "lucide-react";
+import { Trash2, UserPlus, Search, KeyRound } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
 import {
@@ -47,6 +47,8 @@ export const AdminManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [userToDelete, setUserToDelete] = useState<{ userId: string; email: string } | null>(null);
+  const [userToChangePassword, setUserToChangePassword] = useState<{ userId: string; email: string } | null>(null);
+  const [newUserPassword, setNewUserPassword] = useState("");
   const usersPerPage = 10;
   const { toast } = useToast();
   const { isSuperAdmin } = useAuth();
@@ -228,6 +230,66 @@ export const AdminManagement = () => {
     fetchUsers();
   };
 
+  const handleChangePassword = async () => {
+    if (!userToChangePassword) return;
+
+    if (newUserPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("No hay sesión activa");
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-change-password`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: userToChangePassword.userId,
+            newPassword: newUserPassword,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al cambiar la contraseña");
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Contraseña cambiada correctamente",
+      });
+
+      setUserToChangePassword(null);
+      setNewUserPassword("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isSuperAdmin) {
     return null;
   }
@@ -343,6 +405,14 @@ export const AdminManagement = () => {
                       >
                         Editar Rol
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setUserToChangePassword({ userId: user.user_id, email: user.email })}
+                        className="gap-1"
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
                       {user.role && user.email !== "edwar.castillo@gmail.com" && (
                         <Button
                           variant="destructive"
@@ -399,6 +469,40 @@ export const AdminManagement = () => {
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={handleDeleteRole} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={!!userToChangePassword} onOpenChange={(open) => {
+      if (!open) {
+        setUserToChangePassword(null);
+        setNewUserPassword("");
+      }
+    }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cambiar contraseña</AlertDialogTitle>
+          <AlertDialogDescription>
+            Ingresa la nueva contraseña para el usuario{" "}
+            <span className="font-semibold">{userToChangePassword?.email}</span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="py-4">
+          <Label htmlFor="new-password">Nueva contraseña</Label>
+          <Input
+            id="new-password"
+            type="password"
+            placeholder="Mínimo 6 caracteres"
+            value={newUserPassword}
+            onChange={(e) => setNewUserPassword(e.target.value)}
+            className="mt-2"
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleChangePassword} disabled={loading}>
+            Cambiar contraseña
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
