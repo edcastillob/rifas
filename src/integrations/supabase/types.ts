@@ -24,6 +24,8 @@ export type Database = {
           ganador_numero: number | null
           hora: string
           id: string
+          imagen_url: string | null
+          modo_sorteo: string | null
           nombre: string
           precio: number
           updated_at: string | null
@@ -37,6 +39,8 @@ export type Database = {
           ganador_numero?: number | null
           hora: string
           id?: string
+          imagen_url?: string | null
+          modo_sorteo?: string | null
           nombre: string
           precio: number
           updated_at?: string | null
@@ -50,6 +54,8 @@ export type Database = {
           ganador_numero?: number | null
           hora?: string
           id?: string
+          imagen_url?: string | null
+          modo_sorteo?: string | null
           nombre?: string
           precio?: number
           updated_at?: string | null
@@ -65,8 +71,11 @@ export type Database = {
           estado: string
           fecha_compra: string | null
           id: string
+          notas: string | null
           numero: number
           raffle_id: string
+          referencia_pago: string | null
+          vendedor_nombre: string | null
         }
         Insert: {
           comprador_email?: string | null
@@ -76,8 +85,11 @@ export type Database = {
           estado?: string
           fecha_compra?: string | null
           id?: string
+          notas?: string | null
           numero: number
           raffle_id: string
+          referencia_pago?: string | null
+          vendedor_nombre?: string | null
         }
         Update: {
           comprador_email?: string | null
@@ -87,8 +99,11 @@ export type Database = {
           estado?: string
           fecha_compra?: string | null
           id?: string
+          notas?: string | null
           numero?: number
           raffle_id?: string
+          referencia_pago?: string | null
+          vendedor_nombre?: string | null
         }
         Relationships: [
           {
@@ -129,6 +144,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_all_users_with_roles: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          must_change_password: boolean
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       get_user_email: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
