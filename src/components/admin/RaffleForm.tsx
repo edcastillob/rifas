@@ -18,7 +18,16 @@ interface RaffleFormProps {
 }
 
 export const RaffleForm = ({ raffle, onClose }: RaffleFormProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    nombre: string;
+    precio: string | number;
+    cantidad_tickets: string | number;
+    descripcion: string;
+    fecha: string;
+    hora: string;
+    estado: "activa" | "cerrada" | "finalizada";
+    modo_sorteo: string;
+  }>({
     nombre: raffle?.nombre || "",
     precio: raffle?.precio || "",
     cantidad_tickets: raffle?.cantidad_tickets || 100,
