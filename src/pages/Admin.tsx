@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, KeyRound } from "lucide-react";
+import { Plus } from "lucide-react";
 import { RaffleForm } from "@/components/admin/RaffleForm";
 import { RaffleList } from "@/components/admin/RaffleList";
 import { AdminManagement } from "@/components/admin/AdminManagement";
@@ -22,10 +22,14 @@ const Admin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate("/auth", { replace: true });
+    if (!authLoading) {
+      if (!isAdmin) {
+        navigate("/auth", { replace: true });
+      } else if (mustChangePassword) {
+        navigate("/change-password", { replace: true });
+      }
     }
-  }, [authLoading, isAdmin, navigate]);
+  }, [authLoading, isAdmin, mustChangePassword, navigate]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -83,14 +87,6 @@ const Admin = () => {
                     : "Gestiona tus rifas y revisa el estado de los tickets"}
                 </p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/change-password")}
-                className="gap-2"
-              >
-                <KeyRound className="h-4 w-4" />
-                Cambiar Contraseña
-              </Button>
             </div>
           </div>
         </div>

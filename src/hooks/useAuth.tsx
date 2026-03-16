@@ -37,15 +37,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error fetching user role:", error);
       return { role: null, mustChangePassword: false };
     }
-    
-    // Si el usuario no tiene rol asignado, no requiere cambio de contraseña
-    if (!data) {
-      return { role: null, mustChangePassword: false };
-    }
-    
     return {
-      role: (data.role as UserRole) || null,
-      mustChangePassword: data.must_change_password ?? false,
+      role: (data?.role as UserRole) || null,
+      mustChangePassword: data?.must_change_password ?? false,
     };
   };
 
