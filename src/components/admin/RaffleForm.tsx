@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { RaffleImageUpload } from "./RaffleImageUpload";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -19,12 +21,14 @@ export const RaffleForm = ({ raffle, onClose }: RaffleFormProps) => {
   const [formData, setFormData] = useState({
     nombre: raffle?.nombre || "",
     precio: raffle?.precio || "",
-    cantidad_tickets: raffle?.cantidad_tickets || "",
+    cantidad_tickets: raffle?.cantidad_tickets || 100,
     descripcion: raffle?.descripcion || "",
     fecha: raffle?.fecha || "",
     hora: raffle?.hora || "",
     estado: (raffle?.estado || "activa") as "activa" | "cerrada" | "finalizada",
+    modo_sorteo: (raffle as any)?.modo_sorteo || "manual",
   });
+  const [imagenUrl, setImagenUrl] = useState<string | null>((raffle as any)?.imagen_url || null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,16 +44,10 @@ export const RaffleForm = ({ raffle, onClose }: RaffleFormProps) => {
       return;
     }
 
-    if (Number(formData.cantidad_tickets) <= 0) {
-      toast.error("La cantidad de tickets debe ser mayor a 0");
-      return;
-    }
-
     const selectedDate = new Date(formData.fecha);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    if (selectedDate < today) {
+    if (!raffle && selectedDate < today) {
       toast.error("La fecha debe ser futura");
       return;
     }
@@ -57,51 +55,44 @@ export const RaffleForm = ({ raffle, onClose }: RaffleFormProps) => {
     try {
       setLoading(true);
 
+      const raffleData = {
+        nombre: formData.nombre,
+        precio: Number(formData.precio),
+        cantidad_tickets: Number(formData.cantidad_tickets),
+        descripcion: formData.descripcion,
+        fecha: formData.fecha,
+        hora: formData.hora,
+        estado: formData.estado,
+      };
+
       if (raffle) {
         const { error } = await supabase
           .from("raffles")
-          .update({
-            nombre: formData.nombre,
-            precio: Number(formData.precio),
-            cantidad_tickets: Number(formData.cantidad_tickets),
-            descripcion: formData.descripcion,
-            fecha: formData.fecha,
-            hora: formData.hora,
-            estado: formData.estado as "activa" | "cerrada" | "finalizada",
-          })
+          .update(raffleData)
           .eq("id", raffle.id);
-
         if (error) throw error;
         toast.success("Rifa actualizada exitosamente");
       } else {
         const { data: newRaffle, error: raffleError } = await supabase
           .from("raffles")
-          .insert({
-            nombre: formData.nombre,
-            precio: Number(formData.precio),
-            cantidad_tickets: Number(formData.cantidad_tickets),
-            descripcion: formData.descripcion,
-            fecha: formData.fecha,
-            hora: formData.hora,
-            estado: formData.estado as "activa" | "cerrada" | "finalizada",
-          })
+          .insert(raffleData)
           .select()
           .single();
-
         if (raffleError) throw raffleError;
 
+        // Create tickets with "disponible" status
         const ticketsToCreate = Array.from({ length: Number(formData.cantidad_tickets) }, (_, i) => ({
           numero: i + 1,
           raffle_id: newRaffle.id,
-          estado: "libre" as const,
+          estado: "disponible",
         }));
 
         const { error: ticketsError } = await supabase
           .from("tickets")
           .insert(ticketsToCreate);
-
         if (ticketsError) throw ticketsError;
-        toast.success("Rifa creada exitosamente");
+
+        toast.success("Rifa creada exitosamente con " + formData.cantidad_tickets + " tickets");
       }
 
       onClose();
@@ -124,6 +115,7 @@ export const RaffleForm = ({ raffle, onClose }: RaffleFormProps) => {
             onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
             placeholder="Ej: Rifa iPhone 15 Pro"
             required
+            maxLength={200}
           />
         </div>
 
@@ -147,6 +139,7 @@ export const RaffleForm = ({ raffle, onClose }: RaffleFormProps) => {
             id="cantidad_tickets"
             type="number"
             min="1"
+            max="1000"
             value={formData.cantidad_tickets}
             onChange={(e) => setFormData({ ...formData, cantidad_tickets: e.target.value })}
             placeholder="100"
@@ -162,7 +155,7 @@ export const RaffleForm = ({ raffle, onClose }: RaffleFormProps) => {
 
         <div className="space-y-2">
           <Label htmlFor="estado">Estado</Label>
-          <Select value={formData.estado} onValueChange={(value) => setFormData({ ...formData, estado: value as "activa" | "cerrada" | "finalizada" })}>
+          <Select value={formData.estado} onValueChange={(value) => setFormData({ ...formData, estado: value as any })}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -206,8 +199,34 @@ export const RaffleForm = ({ raffle, onClose }: RaffleFormProps) => {
           placeholder="Describe cómo se obtendrá el ganador, premios, términos y condiciones..."
           rows={4}
           required
+          maxLength={2000}
         />
       </div>
+
+      {/* Mode */}
+      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+        <Switch
+          checked={formData.modo_sorteo === "auto_full"}
+          onCheckedChange={(checked) =>
+            setFormData({ ...formData, modo_sorteo: checked ? "auto_full" : "manual" })
+          }
+        />
+        <div>
+          <Label className="text-sm font-medium">Sortear solo cuando se vendan todos los tickets</Label>
+          <p className="text-xs text-muted-foreground">
+            El sorteo se habilitará automáticamente cuando el 100% de los tickets estén vendidos
+          </p>
+        </div>
+      </div>
+
+      {/* Image upload (only for existing raffles) */}
+      {raffle && (
+        <RaffleImageUpload
+          raffleId={raffle.id}
+          currentUrl={imagenUrl}
+          onUploaded={setImagenUrl}
+        />
+      )}
 
       <div className="flex gap-3 justify-end">
         <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
