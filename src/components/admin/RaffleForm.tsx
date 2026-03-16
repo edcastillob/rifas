@@ -141,7 +141,7 @@ export const RaffleForm = ({ raffle, onClose }: RaffleFormProps) => {
             min="1"
             max="1000"
             value={formData.cantidad_tickets}
-            onChange={(e) => setFormData({ ...formData, cantidad_tickets: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, cantidad_tickets: Number(e.target.value) || "" })}
             placeholder="100"
             required
             disabled={!!raffle}
