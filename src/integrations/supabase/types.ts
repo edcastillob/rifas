@@ -24,6 +24,8 @@ export type Database = {
           ganador_numero: number | null
           hora: string
           id: string
+          imagen_url: string | null
+          modo_sorteo: string | null
           nombre: string
           precio: number
           updated_at: string | null
@@ -37,6 +39,8 @@ export type Database = {
           ganador_numero?: number | null
           hora: string
           id?: string
+          imagen_url?: string | null
+          modo_sorteo?: string | null
           nombre: string
           precio: number
           updated_at?: string | null
@@ -50,6 +54,8 @@ export type Database = {
           ganador_numero?: number | null
           hora?: string
           id?: string
+          imagen_url?: string | null
+          modo_sorteo?: string | null
           nombre?: string
           precio?: number
           updated_at?: string | null
@@ -65,8 +71,11 @@ export type Database = {
           estado: string
           fecha_compra: string | null
           id: string
+          notas: string | null
           numero: number
           raffle_id: string
+          referencia_pago: string | null
+          vendedor_nombre: string | null
         }
         Insert: {
           comprador_email?: string | null
@@ -76,8 +85,11 @@ export type Database = {
           estado?: string
           fecha_compra?: string | null
           id?: string
+          notas?: string | null
           numero: number
           raffle_id: string
+          referencia_pago?: string | null
+          vendedor_nombre?: string | null
         }
         Update: {
           comprador_email?: string | null
@@ -87,8 +99,11 @@ export type Database = {
           estado?: string
           fecha_compra?: string | null
           id?: string
+          notas?: string | null
           numero?: number
           raffle_id?: string
+          referencia_pago?: string | null
+          vendedor_nombre?: string | null
         }
         Relationships: [
           {

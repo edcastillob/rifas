@@ -3,8 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TicketGrid } from "@/components/raffle/TicketGrid";
+import { TicketAssignment } from "@/components/admin/TicketAssignment";
+import { Dashboard } from "@/components/admin/Dashboard";
+import { ExportTools } from "@/components/admin/ExportTools";
+import { RaffleVisualCard } from "@/components/raffle/RaffleVisualCard";
+import { useAuth } from "@/hooks/useAuth";
 import type { Database } from "@/integrations/supabase/types";
 
 type Ticket = Database["public"]["Tables"]["tickets"]["Row"];
@@ -13,37 +21,30 @@ type Raffle = Database["public"]["Tables"]["raffles"]["Row"];
 const RaffleTickets = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAdmin, isSuperAdmin } = useAuth();
   const [raffle, setRaffle] = useState<Raffle | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      fetchData();
+    if (!isAdmin) {
+      navigate("/auth", { replace: true });
+      return;
     }
-  }, [id]);
+    if (id) fetchData();
+  }, [id, isAdmin]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      const { data: raffleData, error: raffleError } = await supabase
-        .from("raffles")
-        .select("*")
-        .eq("id", id!)
-        .single();
-
-      if (raffleError) throw raffleError;
-      setRaffle(raffleData);
-
-      const { data: ticketsData, error: ticketsError } = await supabase
-        .from("tickets")
-        .select("*")
-        .eq("raffle_id", id!)
-        .order("numero", { ascending: true });
-
-      if (ticketsError) throw ticketsError;
-      setTickets(ticketsData || []);
+      const [{ data: rd }, { data: td }] = await Promise.all([
+        supabase.from("raffles").select("*").eq("id", id!).single(),
+        supabase.from("tickets").select("*").eq("raffle_id", id!).order("numero", { ascending: true }),
+      ]);
+      setRaffle(rd);
+      setTickets(td || []);
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -51,33 +52,18 @@ const RaffleTickets = () => {
     }
   };
 
-  const exportData = () => {
-    if (!tickets.length) return;
-
-    const soldTickets = tickets.filter(t => t.estado === "ocupado");
-    const csvContent = [
-      ["Número", "Nombre", "Email", "Teléfono", "Fecha de Compra"],
-      ...soldTickets.map(t => [
-        t.numero,
-        t.comprador_nombre || "",
-        t.comprador_email || "",
-        t.comprador_telefono || "",
-        t.fecha_compra ? new Date(t.fecha_compra).toLocaleString() : ""
-      ])
-    ].map(row => row.join(",")).join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `rifa-${raffle?.nombre}-compradores.csv`;
-    a.click();
+  const handleTicketClick = (numero: number) => {
+    const ticket = tickets.find(t => t.numero === numero);
+    if (ticket) {
+      setSelectedTicket(ticket);
+      setAssignOpen(true);
+    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Cargando...</p>
+        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -90,20 +76,18 @@ const RaffleTickets = () => {
     );
   }
 
-  const soldCount = tickets.filter(t => t.estado === "ocupado").length;
-  const soldPercentage = ((soldCount / tickets.length) * 100).toFixed(1);
+  const soldTickets = tickets.filter(t => t.estado !== "disponible" && t.estado !== "libre");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-primary/5">
       <div className="container mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/admin")}
-          className="mb-6 gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver al Panel
-        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" onClick={() => navigate("/admin")} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Volver al Panel
+          </Button>
+          <ExportTools tickets={tickets as any} raffleName={raffle.nombre} />
+        </div>
 
         <Card className="border-primary/20 shadow-card mb-6">
           <CardHeader>
@@ -117,66 +101,145 @@ const RaffleTickets = () => {
               </Badge>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Vendidos</p>
-                <p className="text-2xl font-bold text-accent">{soldCount}/{tickets.length}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Porcentaje</p>
-                <p className="text-2xl font-bold text-primary">{soldPercentage}%</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Precio</p>
-                <p className="text-2xl font-bold">${raffle.precio}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Recaudado</p>
-                <p className="text-2xl font-bold text-accent">${(Number(raffle.precio) * soldCount).toFixed(2)}</p>
-              </div>
-            </div>
-            <Button onClick={exportData} className="gap-2" disabled={soldCount === 0}>
-              <Download className="h-4 w-4" />
-              Exportar Compradores
-            </Button>
-          </CardContent>
         </Card>
 
-        <Card className="border-primary/20 shadow-card">
-          <CardHeader>
-            <CardTitle>Estado de Tickets</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-5 sm:grid-cols-10 md:grid-cols-15 lg:grid-cols-20 gap-2">
-              {tickets.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  className={`aspect-square flex items-center justify-center rounded-md text-sm font-semibold transition-all ${
-                    ticket.estado === "ocupado"
-                      ? "bg-destructive/20 text-destructive border-2 border-destructive"
-                      : "bg-accent/20 text-accent border-2 border-accent"
-                  }`}
-                  title={ticket.estado === "ocupado" ? `${ticket.comprador_nombre}\n${ticket.comprador_email}` : "Disponible"}
-                >
-                  {ticket.numero}
+        <Tabs defaultValue="grid" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="grid">Tablero</TabsTrigger>
+            <TabsTrigger value="list">Lista Completa</TabsTrigger>
+            <TabsTrigger value="dashboard" className="gap-1">
+              <BarChart3 className="h-3.5 w-3.5" />
+              Dashboard
+            </TabsTrigger>
+            {(raffle as any).imagen_url && (
+              <TabsTrigger value="visual">Visual</TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="grid">
+            <Card className="border-primary/20 shadow-card">
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  Haz clic en un ticket para asignar o editar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TicketGrid
+                  tickets={tickets as any}
+                  selectable
+                  onSelect={handleTicketClick}
+                  showBuyerOnHover
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="list">
+            <Card className="border-primary/20 shadow-card">
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  Tickets Vendidos/Reservados ({soldTickets.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16">#</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Teléfono</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Vendedor</TableHead>
+                        <TableHead>Ref. Pago</TableHead>
+                        <TableHead>Notas</TableHead>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {soldTickets.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                            No hay tickets vendidos aún
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        soldTickets.map((t) => (
+                          <TableRow key={t.id}>
+                            <TableCell className="font-bold">{t.numero}</TableCell>
+                            <TableCell>
+                              <Badge variant={t.estado === "pagado" ? "default" : "secondary"} className="text-xs">
+                                {t.estado === "pagado" ? "Pagado" : "Reservado"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{t.comprador_nombre}</TableCell>
+                            <TableCell>{t.comprador_telefono}</TableCell>
+                            <TableCell className="text-muted-foreground">{t.comprador_email || "—"}</TableCell>
+                            <TableCell>{(t as any).vendedor_nombre || "—"}</TableCell>
+                            <TableCell>{(t as any).referencia_pago || "—"}</TableCell>
+                            <TableCell className="max-w-[150px] truncate">{(t as any).notas || "—"}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {t.fecha_compra ? new Date(t.fecha_compra).toLocaleDateString() : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedTicket(t);
+                                  setAssignOpen(true);
+                                }}
+                              >
+                                Editar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
-              ))}
-            </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <div className="flex gap-6 mt-6 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-accent/20 border-2 border-accent rounded"></div>
-                <span>Disponible</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-destructive/20 border-2 border-destructive rounded"></div>
-                <span>Ocupado</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <TabsContent value="dashboard">
+            <Dashboard
+              raffleId={raffle.id}
+              raffleName={raffle.nombre}
+              rafflePrice={Number(raffle.precio)}
+            />
+          </TabsContent>
+
+          {(raffle as any).imagen_url && (
+            <TabsContent value="visual">
+              <Card className="border-primary/20 shadow-card">
+                <CardHeader>
+                  <CardTitle className="text-lg">Tablero Visual</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RaffleVisualCard
+                    imagenUrl={(raffle as any).imagen_url}
+                    raffleName={raffle.nombre}
+                    tickets={tickets}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
+
+      {assignOpen && selectedTicket && (
+        <TicketAssignment
+          open={assignOpen}
+          onClose={() => { setAssignOpen(false); setSelectedTicket(null); }}
+          ticket={selectedTicket as any}
+          onSuccess={fetchData}
+        />
+      )}
     </div>
   );
 };

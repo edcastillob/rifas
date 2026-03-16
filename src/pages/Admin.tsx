@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, KeyRound } from "lucide-react";
+import { Plus } from "lucide-react";
 import { RaffleForm } from "@/components/admin/RaffleForm";
 import { RaffleList } from "@/components/admin/RaffleList";
 import { AdminManagement } from "@/components/admin/AdminManagement";
@@ -22,15 +22,17 @@ const Admin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate("/auth", { replace: true });
+    if (!authLoading) {
+      if (!isAdmin) {
+        navigate("/auth", { replace: true });
+      } else if (mustChangePassword) {
+        navigate("/change-password", { replace: true });
+      }
     }
-  }, [authLoading, isAdmin, navigate]);
+  }, [authLoading, isAdmin, mustChangePassword, navigate]);
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchRaffles();
-    }
+    if (isAdmin) fetchRaffles();
   }, [isAdmin]);
 
   const fetchRaffles = async () => {
@@ -40,7 +42,6 @@ const Admin = () => {
         .from("raffles")
         .select("*")
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       setRaffles(data || []);
     } catch (error) {
@@ -61,15 +62,12 @@ const Admin = () => {
     fetchRaffles();
   };
 
-  if (authLoading || !isAdmin) {
-    return null;
-  }
+  if (authLoading || !isAdmin) return null;
 
   return (
     <>
       <Navbar />
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-primary/5">
-        {/* Hero Section */}
         <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b border-primary/10">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
@@ -83,34 +81,26 @@ const Admin = () => {
                     : "Gestiona tus rifas y revisa el estado de los tickets"}
                 </p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/change-password")}
-                className="gap-2"
-              >
-                <KeyRound className="h-4 w-4" />
-                Cambiar Contraseña
-              </Button>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
           {!showForm ? (
             <div className="space-y-6">
-              {/* Solo el super admin ve la gestión de administradores */}
               {isSuperAdmin && <AdminManagement />}
               
-              {/* Ambos roles ven la gestión de rifas */}
               <Card className="border-primary/20 shadow-card">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Rifas Creadas</CardTitle>
-                    <Button onClick={() => setShowForm(true)} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Nueva Rifa
-                    </Button>
+                    {/* Only super_admin can create raffles */}
+                    {isSuperAdmin && (
+                      <Button onClick={() => setShowForm(true)} className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Nueva Rifa
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -129,10 +119,7 @@ const Admin = () => {
                 <CardTitle>{editingRaffle ? "Editar Rifa" : "Nueva Rifa"}</CardTitle>
               </CardHeader>
               <CardContent>
-                <RaffleForm
-                  raffle={editingRaffle}
-                  onClose={handleFormClose}
-                />
+                <RaffleForm raffle={editingRaffle} onClose={handleFormClose} />
               </CardContent>
             </Card>
           )}
